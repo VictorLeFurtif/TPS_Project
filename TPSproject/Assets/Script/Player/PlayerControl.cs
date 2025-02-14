@@ -1,13 +1,17 @@
+using System;
 using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Script
 {
     public class PlayerControl : MonoBehaviour
     {
+        [SerializeField] private int vaultLayer;
+        
         [Header("MOVE SPEED")] [SerializeField]
         private float moveSpeed = 5;
-
         [SerializeField] private float moveSpeedRunning = 7;
         [SerializeField] private float moveSpeedWalking = 5;
         [SerializeField] private float moveSpeedCrawling = 2;
@@ -18,9 +22,13 @@ namespace Script
 
         [Header("COMPONENT")] public Animator animatorComponent;
         private Rigidbody rbComponent;
+        [SerializeField] private AnimationClip animationClimb;
 
         [Header("CAPSULE COLLIDER")] [SerializeField]
         private CapsuleCollider standPlayer;
+
+        private float playerHeight;
+        private float playerRadius;
 
         [SerializeField] private CapsuleCollider crouchPlayer;
         [SerializeField] private CapsuleCollider crawlPlayer;
@@ -36,10 +44,12 @@ namespace Script
             Normal,
             Crouching,
             Crawling,
-            Attack
+            Attack,
+            Climbing
         }
 
-        [Header("STATE PLAYER")] public PlayerStateCollider currentPLayerStateCollider = PlayerStateCollider.Normal;
+        [Header("STATE PLAYER")] 
+        public PlayerStateCollider currentPLayerStateCollider = PlayerStateCollider.Normal;
 
 
         private void Awake()
@@ -70,6 +80,10 @@ namespace Script
                 Debug.LogWarning("No rb detected on " + gameObject.name);
             }
 
+            playerHeight = standPlayer.height;
+            playerRadius = standPlayer.radius;
+            
+            //lock Cursor
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
         }
@@ -77,13 +91,21 @@ namespace Script
     
         private void Update()
         {
+        PlayerMovement();
+        Vault();
+        Vector3 playerHead = gameObject.transform.position + new Vector3(0, playerHeight, 0);
+        Debug.DrawRay(playerHead, transform.forward, Color.green, vaultLayer);
         
+        }
+
+        private void PlayerMovement()
+        {
             float horizontalInput = Input.GetAxis("Horizontal");
             float verticallInput = Input.GetAxis("Vertical");
             Vector3 camForward = CameraReferenceTransform.forward;
             Vector3 deplacement = verticallInput * camForward + horizontalInput * CameraReferenceTransform.right;
             deplacement.y = 0; // pour pas qu'il rentre dans le sol si la caméra est vu plonger
-        
+            
             if (Input.GetKeyDown(KeyCode.LeftShift))
             {
                 moveSpeed = moveSpeedRunning;
@@ -148,30 +170,35 @@ namespace Script
         
 
         }
-
+        
         private void FixedUpdate()
         {
-            if (currentPLayerStateCollider == PlayerStateCollider.Normal && standPlayer.enabled == false)
-            {
-                standPlayer.enabled = true;
-                crouchPlayer.enabled = false;
-                crawlPlayer.enabled = false;
-            }
+            PlayerCollision();
+        }
 
-            if (currentPLayerStateCollider == PlayerStateCollider.Crouching && crouchPlayer.enabled == false)
+        private void PlayerCollision()
+        {
+            switch (currentPLayerStateCollider)
             {
-                crouchPlayer.enabled = true;
-                standPlayer.enabled = false;
-                crawlPlayer.enabled = false;
+                case PlayerStateCollider.Normal when standPlayer.enabled == false:
+                    standPlayer.enabled = true;
+                    crouchPlayer.enabled = false;
+                    crawlPlayer.enabled = false;
+                    break;
+                case PlayerStateCollider.Crouching when crouchPlayer.enabled == false:
+                    crouchPlayer.enabled = true;
+                    standPlayer.enabled = false;
+                    crawlPlayer.enabled = false;
+                    break;
+                case PlayerStateCollider.Crawling when crawlPlayer.enabled == false:
+                    crawlPlayer.enabled = true;
+                    crouchPlayer.enabled = false;
+                    standPlayer.enabled = false;
+                    break;
+                case PlayerStateCollider.Attack:
+                case PlayerStateCollider.Climbing:
+                    break;
             }
-
-            if (currentPLayerStateCollider == PlayerStateCollider.Crawling && crawlPlayer.enabled == false)
-            {
-                crawlPlayer.enabled = true;
-                crouchPlayer.enabled = false;
-                standPlayer.enabled = false;
-            }
-        
         }
 
         IEnumerator FightStateChanger()
@@ -196,6 +223,42 @@ namespace Script
             if (other.CompareTag("killZone")) isInKillZone = false;
         }
 
-    
+        private void Vault()
+        {
+            if (!Input.GetKeyDown(KeyCode.Space)) return;
+            Vector3 playerHead = gameObject.transform.position + new Vector3(0, playerHeight, 0);
+            if (!Physics.Raycast(playerHead, transform.forward, out var firstHit, 1f, vaultLayer)) return;
+            Debug.Log("Here is a wall");
+            if (Physics.Raycast(firstHit.point + (transform.forward * playerRadius) +
+                                (Vector3.up * 0.6f * playerHeight), Vector3.down,
+                    out var secondHit,playerHeight))
+            {
+                print("Found place to land");
+                StartCoroutine(VaultAnimation(secondHit.point, 2));
+            }
+        }
+
+        private IEnumerator VaultAnimation(Vector3 targetPosition, float duration)
+        {
+            currentPLayerStateCollider = PlayerStateCollider.Climbing;
+            animatorComponent.Play("Climbing");
+            rbComponent.useGravity = false;
+            float time = 0;
+            Vector3 startPosition = transform.position;
+
+           /* while (time < duration)
+            {
+                transform.position = Vector3.Lerp(startPosition, targetPosition, time / duration);
+                time += Time.deltaTime;
+                yield return null;
+            }*/
+           yield return new WaitForSeconds(animationClimb.length);
+           animatorComponent.Play("Standing");
+            transform.position = targetPosition;
+            rbComponent.useGravity = true;
+            currentPLayerStateCollider = PlayerStateCollider.Normal;
+            
+        }
+        
     }
 }

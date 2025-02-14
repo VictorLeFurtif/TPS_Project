@@ -19,7 +19,11 @@ namespace Script
 
         void Update()
         {
-        
+        CameraFollowTarget();
+        }
+
+        private void CameraFollowTarget()
+        {
             rotationY += Input.GetAxis("Mouse X") * vitesseRotation;
             rotationX -= Input.GetAxis("Mouse Y") * vitesseRotation;
             rotationX = Mathf.Clamp(rotationX, -30, 30);
@@ -41,8 +45,13 @@ namespace Script
                 position += new Vector3(offsetX, offsetY, 0);
             }
 
-       
-            transform.position = position;
+            if (PlayerControl.INSTANCE.currentPLayerStateCollider == PlayerControl.PlayerStateCollider.Climbing)
+            {
+                transform.position = Vector3.Lerp(transform.position,cible.transform.position + new Vector3(-distance,4,0),Time.deltaTime * 4);
+                return;
+            }
+            
+            transform.position = position; 
         }
     }
 }

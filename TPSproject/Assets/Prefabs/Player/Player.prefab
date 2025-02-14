@@ -1413,6 +1413,7 @@ GameObject:
   - component: {fileID: 4542540772260917471}
   - component: {fileID: 3034785440249477218}
   - component: {fileID: 736752034493325378}
+  - component: {fileID: 2669124226132355723}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -1450,6 +1451,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6d4ba3d95e0e9da478b0fb1710f2793b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  vaultLayer: 7
   moveSpeed: 20
   moveSpeedRunning: 7
   moveSpeedWalking: 5
@@ -1458,11 +1460,12 @@ MonoBehaviour:
   moveSpeedAttacking: 0
   CameraReferenceTransform: {fileID: 0}
   animatorComponent: {fileID: 0}
+  animationClimb: {fileID: 7400000, guid: 4a3756728e0433445ae520a68ca308c8, type: 2}
   standPlayer: {fileID: 4542540772260917471}
   crouchPlayer: {fileID: 3034785440249477218}
   crawlPlayer: {fileID: 736752034493325378}
   isInKillZone: 0
-  gravityMultiplier: 2
+  gravityMultiplier: 15
   currentPLayerStateCollider: 0
 --- !u!54 &2009988607839230157
 Rigidbody:
@@ -1490,7 +1493,7 @@ Rigidbody:
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 112
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!95 &1112809436908081114
 Animator:
   serializedVersion: 5
@@ -1581,6 +1584,37 @@ CapsuleCollider:
   m_Height: 0.5
   m_Direction: 1
   m_Center: {x: 0.035634637, y: 0.24, z: 0}
+--- !u!114 &2669124226132355723
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4628963634800241846}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Actions: {fileID: -944628639613478452, guid: da9ea02dd9950b04fa3feb7757b83918,
+    type: 3}
+  m_NotificationBehavior: 0
+  m_UIInputModule: {fileID: 0}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents: []
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: 
+  m_DefaultActionMap: Player
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 0}
 --- !u!1 &4785180468856441503
 GameObject:
   m_ObjectHideFlags: 0
