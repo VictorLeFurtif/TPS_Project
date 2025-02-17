@@ -4,8 +4,7 @@ namespace Script
 {
     public class RaycastEnnemy : MonoBehaviour
     {
-
-        public GameObject player; 
+        
         public float rayLength = 20f; 
         public Color rayColor = Color.red; 
         public Color rayColorNoObstacle = Color.green;
@@ -14,8 +13,12 @@ namespace Script
 
         private void Update()
         {
-       
-            Vector3 directionToPlayer = (player.transform.position - transform.position).normalized;
+            RayCheckObstacle();   
+        }
+
+        private void RayCheckObstacle()
+        {
+            Vector3 directionToPlayer = (PlayerControl.INSTANCE.transform.position - transform.position).normalized;
             Ray ray = new Ray(transform.position, directionToPlayer);
             RaycastHit hit;
         
