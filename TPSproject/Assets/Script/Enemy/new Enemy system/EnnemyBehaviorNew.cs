@@ -34,6 +34,12 @@ public class EnnemyBehaviorNew : MonoBehaviour
     [SerializeField] private Color rayColor = Color.red; 
     [SerializeField] private Color rayColorNoObstacle = Color.green;
     private bool isPlayerTouched = false;
+    
+    [Header("Animator Parameters")]
+    private Animator animator;
+    
+    [Header("Sight Vue")]
+    private BoxCollider sightVue;
 
     enum IaState
     {
@@ -56,6 +62,8 @@ public class EnnemyBehaviorNew : MonoBehaviour
     private void Start()
     {
         agent = GetComponent<NavMeshAgent>();
+        animator = GetComponent<Animator>();
+        sightVue = GetComponentInChildren<BoxCollider>();
     }
 
     private bool CheckIfPlayerInSightEnemy()
@@ -72,9 +80,17 @@ public class EnnemyBehaviorNew : MonoBehaviour
     {
         RayCheckObstacle();
         if (!CheckIfPlayerInSightEnemy() && !CheckIfPlayerInFightZone())currentIaState = IaState.Patrol;
-        if (CheckIfPlayerInSightEnemy() && !CheckIfPlayerInFightZone())currentIaState = IaState.ChasePlayer;
-        if (CheckIfPlayerInSightEnemy() && CheckIfPlayerInFightZone())currentIaState = IaState.Attack;
-
+        
+        if (CheckIfPlayerInSightEnemy() && !CheckIfPlayerInFightZone() && 
+            (PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crawling ||
+             PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crouching))
+            currentIaState = IaState.ChasePlayer;
+        
+        if (CheckIfPlayerInSightEnemy() && CheckIfPlayerInFightZone() && 
+            (PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crawling ||
+             PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crouching))
+            currentIaState = IaState.Attack;
+        
         if (currentIaState == IaState.ChasePlayer && !isPlayerTouched )
         {
             currentIaState = IaState.Patrol;
@@ -84,13 +100,17 @@ public class EnnemyBehaviorNew : MonoBehaviour
         {
             case IaState.Patrol:
                 PatrolBehaviour();
+                animator.SetBool("Run",false);
                 break;
             case IaState.ChasePlayer:
                 ChasePlayerBehaviour();
+                animator.SetBool("Run", true);
                 break;
             case IaState.Attack:
                 AttackBehavior();
                 break;
+            default:
+                throw new ArgumentOutOfRangeException();
         }
     }
 
@@ -133,6 +153,7 @@ public class EnnemyBehaviorNew : MonoBehaviour
         if (!alreadyAttacked)
         {
             // futur code pour attack
+            animator.Play("Zombie Punching");
             Invoke(nameof(ResetAttack), timeBetweenAttacks);
         }
     }
@@ -162,5 +183,21 @@ public class EnnemyBehaviorNew : MonoBehaviour
             }
         }
         else Debug.DrawRay(transform.position, directionToPlayer * rayLength, rayColorNoObstacle);
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player") && CheckIfPlayerInSightEnemy())
+        {
+            currentIaState = IaState.ChasePlayer;
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            currentIaState = IaState.Patrol;
+        }
     }
 }

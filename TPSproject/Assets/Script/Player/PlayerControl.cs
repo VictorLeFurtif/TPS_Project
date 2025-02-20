@@ -100,11 +100,7 @@ namespace Script
 
         private void PlayerMovement()
         {
-            float horizontalInput = Input.GetAxis("Horizontal");
-            float verticallInput = Input.GetAxis("Vertical");
-            Vector3 camForward = CameraReferenceTransform.forward;
-            Vector3 deplacement = verticallInput * camForward + horizontalInput * CameraReferenceTransform.right;
-            deplacement.y = 0; // pour pas qu'il rentre dans le sol si la caméra est vu plonger
+            
             
             if (Input.GetKeyDown(KeyCode.LeftShift))
             {
@@ -151,7 +147,17 @@ namespace Script
                 animatorComponent.SetTrigger("IsStabbing");
                 StartCoroutine(FightStateChanger());
             }
+            
+        }
 
+        private void PlayerMovementWithoutUpdate()
+        {
+            float horizontalInput = Input.GetAxis("Horizontal");
+            float verticallInput = Input.GetAxis("Vertical");
+            Vector3 camForward = CameraReferenceTransform.forward;
+            Vector3 deplacement = verticallInput * camForward + horizontalInput * CameraReferenceTransform.right;
+            deplacement.y = 0; // pour pas qu'il rentre dans le sol si la caméra est vu plonger
+            
             Vector3 deplacementFinal =
                 Vector3.ClampMagnitude(deplacement, 1) *
                 moveSpeed; // force pas le comme avec le normalized mais fixe le max à 1
@@ -161,19 +167,18 @@ namespace Script
 
             if (deplacement != Vector3.zero && currentPLayerStateCollider != PlayerStateCollider.Attack)
             {
-                rbComponent.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(deplacement),
-                    Time.deltaTime * rotationSpeed);
+                rbComponent.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(deplacement),
+                    Time.deltaTime * rotationSpeed); // Slerp apprament mieux que Lerp dans ce cas là car c'est une interpolation sphérique
             }
 
             if (horizontalInput != 0 || verticallInput != 0) animatorComponent.SetBool("IsWalking", true);
             else animatorComponent.SetBool("IsWalking", false);
-        
-
         }
-        
+         
         private void FixedUpdate()
         {
             PlayerCollision();
+            PlayerMovementWithoutUpdate();
         }
 
         private void PlayerCollision()
@@ -200,7 +205,8 @@ namespace Script
                     break;
             }
         }
-
+        
+        
         IEnumerator FightStateChanger()
         {
             currentPLayerStateCollider = PlayerStateCollider.Attack;
@@ -208,9 +214,8 @@ namespace Script
             yield return new WaitForSeconds(2);
             currentPLayerStateCollider = PlayerStateCollider.Normal;
             rbComponent.constraints = RigidbodyConstraints.None;
-            rbComponent.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezeRotationY;
-            
-            ;
+            rbComponent.constraints = RigidbodyConstraints.FreezeRotationX |
+                                      RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezeRotationY;
         }
 
         private void OnTriggerEnter(Collider other)
@@ -243,8 +248,6 @@ namespace Script
             currentPLayerStateCollider = PlayerStateCollider.Climbing;
             animatorComponent.Play("Climbing");
             rbComponent.useGravity = false;
-            float time = 0;
-            Vector3 startPosition = transform.position;
 
            /* while (time < duration)
             {
@@ -258,7 +261,9 @@ namespace Script
             rbComponent.useGravity = true;
             currentPLayerStateCollider = PlayerStateCollider.Normal;
             
+            
         }
+        
         
     }
 }
