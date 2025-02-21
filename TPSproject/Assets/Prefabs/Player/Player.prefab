@@ -1456,7 +1456,7 @@ MonoBehaviour:
   moveSpeedRunning: 7
   moveSpeedWalking: 5
   moveSpeedCrawling: 2
-  rotationSpeed: 50
+  rotationSpeed: 9
   moveSpeedAttacking: 0
   CameraReferenceTransform: {fileID: 0}
   animatorComponent: {fileID: 0}
@@ -1503,11 +1503,11 @@ Animator:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4628963634800241846}
   m_Enabled: 1
-  m_Avatar: {fileID: 0}
+  m_Avatar: {fileID: 9000000, guid: 81bb9eea30387e442899949a80011e55, type: 3}
   m_Controller: {fileID: 9100000, guid: 88d98cdb701af6442842089abd41663f, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
-  m_ApplyRootMotion: 0
+  m_ApplyRootMotion: 1
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_WarningMessage: 

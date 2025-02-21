@@ -16,7 +16,8 @@ public class EnnemyBehaviorNew : MonoBehaviour
     private NavMeshAgent agent;
     
     [Header("Ia State")]
-    [SerializeField] private IaState currentIaState = IaState.Patrol; 
+    [SerializeField] private IaState currentIaState = IaState.Patrol;
+    private bool searching = false;
     
     [Header("Range Float")]
     [SerializeField] private float sightRange;
@@ -41,11 +42,15 @@ public class EnnemyBehaviorNew : MonoBehaviour
     [Header("Sight Vue")]
     private BoxCollider sightVue;
 
+    private Vector3 targetPosition = Vector3.zero;
+    
+
     enum IaState
     {
         Patrol,
         ChasePlayer,
         Attack,
+        Search,
     }
 
     private void OnDrawGizmosSelected()
@@ -79,22 +84,45 @@ public class EnnemyBehaviorNew : MonoBehaviour
     private void IaBehaviour() // oublie pas quand le player est accroupi ou qu'il crawl
     {
         RayCheckObstacle();
-        if (!CheckIfPlayerInSightEnemy() && !CheckIfPlayerInFightZone())currentIaState = IaState.Patrol;
+        if (!CheckIfPlayerInSightEnemy() && !CheckIfPlayerInFightZone())
+            currentIaState = IaState.Patrol;
         
-        if (CheckIfPlayerInSightEnemy() && !CheckIfPlayerInFightZone() && 
+        else if (CheckIfPlayerInSightEnemy() && !CheckIfPlayerInFightZone() && 
             (PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crawling ||
              PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crouching))
             currentIaState = IaState.ChasePlayer;
         
-        if (CheckIfPlayerInSightEnemy() && CheckIfPlayerInFightZone() && 
+        else if (CheckIfPlayerInSightEnemy() && CheckIfPlayerInFightZone() && 
             (PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crawling ||
              PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crouching))
             currentIaState = IaState.Attack;
         
-        if (currentIaState == IaState.ChasePlayer && !isPlayerTouched )
+        else if (currentIaState == IaState.Search)
         {
             currentIaState = IaState.Patrol;
         }
+        
+        
+        
+        if (currentIaState == IaState.ChasePlayer)
+        {
+            if (!isPlayerTouched && targetPosition==Vector3.zero)
+            {
+                currentIaState = IaState.Search;
+                targetPosition = PlayerControl.INSTANCE.transform.position;
+                agent.SetDestination(targetPosition);
+            }
+            else if (!isPlayerTouched)
+            {
+                currentIaState = IaState.Search;
+            }
+            else
+            {
+                targetPosition = Vector3.zero;
+            }
+        }
+        
+        
 
         switch (currentIaState)
         {
@@ -108,6 +136,8 @@ public class EnnemyBehaviorNew : MonoBehaviour
                 break;
             case IaState.Attack:
                 AttackBehavior();
+                break;
+            case IaState.Search: 
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
@@ -144,18 +174,17 @@ public class EnnemyBehaviorNew : MonoBehaviour
     {
         agent.SetDestination(PlayerControl.INSTANCE.transform.position);
     }
+    
 
     private void AttackBehavior()
     {
         agent.SetDestination(transform.position); //faut lock l'ennemi
         transform.LookAt(PlayerControl.INSTANCE.transform); // Le lookAt me permet quand y'aura les anims
 
-        if (!alreadyAttacked)
-        {
-            // futur code pour attack
-            animator.Play("Zombie Punching");
-            Invoke(nameof(ResetAttack), timeBetweenAttacks);
-        }
+        if (alreadyAttacked) return;
+        // futur code pour attack
+        animator.Play("Zombie Punching");
+        Invoke(nameof(ResetAttack), timeBetweenAttacks);
     }
 
     private void ResetAttack()
