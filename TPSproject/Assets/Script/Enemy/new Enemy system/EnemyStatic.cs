@@ -4,10 +4,9 @@ using UnityEngine;
 using UnityEngine.AI;
 using Random = UnityEngine.Random;
 
-
 namespace Script.Enemy.new_Enemy_system
 {
-    public class EnnemyBehaviorNew : MonoBehaviour
+    public class EnemyStatic : MonoBehaviour
     {
         [Header("LayerMask")]
         [SerializeField] private LayerMask whatIsPlayer;
@@ -16,7 +15,7 @@ namespace Script.Enemy.new_Enemy_system
         private NavMeshAgent agent;
     
         [Header("Ia State")]
-        [SerializeField] private IaState currentIaState = IaState.Patrol;
+        [SerializeField] private IaState currentIaState = IaState.Idle;
         private bool searching = false;
     
         [Header("Range Float")]
@@ -46,13 +45,13 @@ namespace Script.Enemy.new_Enemy_system
 
         [Header("SPEED")] 
         [SerializeField] private float moveSpeed;
-
+        
         [Header("Origin Position")] [SerializeField]
         private Vector3 originalPosition;
     
         enum IaState
         {
-            Patrol,
+            Idle,
             ChasePlayer,
             Attack,
             Search,
@@ -92,7 +91,7 @@ namespace Script.Enemy.new_Enemy_system
         {
             RayCheckObstacle();
             if (!CheckIfPlayerInSightEnemy() && !CheckIfPlayerInFightZone())
-                currentIaState = IaState.Patrol;
+                currentIaState = IaState.Idle;
         
             else if (CheckIfPlayerInSightEnemy() && !CheckIfPlayerInFightZone() && 
                      (PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crawling &&
@@ -106,7 +105,7 @@ namespace Script.Enemy.new_Enemy_system
         
             else if (currentIaState == IaState.Search)
             {
-                currentIaState = IaState.Patrol;
+                currentIaState = IaState.Idle;
             }
         
         
@@ -133,9 +132,8 @@ namespace Script.Enemy.new_Enemy_system
 
             switch (currentIaState)
             {
-                case IaState.Patrol:
+                case IaState.Idle:
                     PatrolBehaviour();
-                    animator.SetBool("Run",false);
                     break;
                 case IaState.ChasePlayer:
                     ChasePlayerBehaviour();
@@ -145,6 +143,7 @@ namespace Script.Enemy.new_Enemy_system
                     AttackBehavior();
                     break;
                 case IaState.Search: 
+                    animator.SetBool("Run",false);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -153,14 +152,15 @@ namespace Script.Enemy.new_Enemy_system
 
         private void PatrolBehaviour()
         {
-            if (!walkPointSet) SearchWalkPoint();
-            if (walkPointSet) agent.SetDestination(walkPoint);
-    
-            Vector3 distanceToWalkPoint = transform.position - walkPoint;
-
-            if (distanceToWalkPoint.magnitude < 1f || agent.remainingDistance < 0.5f)
+            //TODO for the moment we dont care because we need him static so he wont move
+            if (!Mathf.Approximately(transform.position.x,originalPosition.x))
             {
-                walkPointSet = false;
+                agent.SetDestination(originalPosition);
+                animator.SetBool("Run", true);
+            }
+            else
+            {
+                animator.SetBool("Run",false);
             }
         }
 
@@ -233,7 +233,7 @@ namespace Script.Enemy.new_Enemy_system
         {
             if (other.CompareTag("Player"))
             {
-                currentIaState = IaState.Patrol;
+                currentIaState = IaState.Idle;
             }
         }
     }

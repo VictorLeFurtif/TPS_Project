@@ -1,10 +1,7 @@
-using System;
 using System.Collections;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
-namespace Script
+namespace Script.Player
 {
     public class PlayerControl : MonoBehaviour
     {
@@ -34,8 +31,12 @@ namespace Script
         [SerializeField] private CapsuleCollider crawlPlayer;
 
         [SerializeField] public bool isInKillZone = false;
+        
+        
 
         [Header("VALUE")][Tooltip("Original 9,81")] [SerializeField] private float gravityMultiplier;
+        
+       
     
         public static PlayerControl INSTANCE;
 

@@ -1,3 +1,4 @@
+using Script.Player;
 using UnityEngine;
 
 namespace Script
