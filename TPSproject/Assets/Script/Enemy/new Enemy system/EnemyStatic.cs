@@ -15,7 +15,7 @@ namespace Script.Enemy.new_Enemy_system
         private NavMeshAgent agent;
     
         [Header("Ia State")]
-        [SerializeField] private IaState currentIaState = IaState.Idle;
+        public IaState currentIaState = IaState.Idle;
         private bool searching = false;
     
         [Header("Range Float")]
@@ -36,7 +36,7 @@ namespace Script.Enemy.new_Enemy_system
         private bool isPlayerTouched = false;
     
         [Header("Animator Parameters")]
-        private Animator animator;
+        public Animator animator;
     
         [Header("Sight Vue")]
         private BoxCollider sightVue;
@@ -48,13 +48,14 @@ namespace Script.Enemy.new_Enemy_system
         
         [Header("Origin Position")] [SerializeField]
         private Vector3 originalPosition;
-    
-        enum IaState
+
+        public enum IaState
         {
             Idle,
             ChasePlayer,
             Attack,
             Search,
+            Dead,
         }
 
         private void OnDrawGizmosSelected()
@@ -89,18 +90,24 @@ namespace Script.Enemy.new_Enemy_system
 
         private void IaBehaviour() // oublie pas quand le player est accroupi ou qu'il crawl
         {
+            if (currentIaState == IaState.Dead)
+            {
+                return;
+            }
             RayCheckObstacle();
             if (!CheckIfPlayerInSightEnemy() && !CheckIfPlayerInFightZone())
                 currentIaState = IaState.Idle;
         
             else if (CheckIfPlayerInSightEnemy() && !CheckIfPlayerInFightZone() && 
                      (PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crawling &&
-                      PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crouching))
+                      PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crouching && 
+                      PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Attack))
                 currentIaState = IaState.ChasePlayer;
         
             else if (CheckIfPlayerInSightEnemy() && CheckIfPlayerInFightZone() && 
                      (PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crawling &&
-                      PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crouching))
+                      PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crouching && 
+                      PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Attack))
                 currentIaState = IaState.Attack;
         
             else if (currentIaState == IaState.Search)
@@ -108,7 +115,12 @@ namespace Script.Enemy.new_Enemy_system
                 currentIaState = IaState.Idle;
             }
         
-        
+            if (CheckIfPlayerInSightEnemy() && CheckIfPlayerInFightZone() && PlayerControl.INSTANCE.currentPLayerStateCollider == PlayerControl.PlayerStateCollider.Attack)
+            {
+                currentIaState = IaState.Dead;
+                animator.Play("Death animation");
+                return;
+            }
         
             if (currentIaState == IaState.ChasePlayer)
             {

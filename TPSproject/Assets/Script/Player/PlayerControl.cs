@@ -1,4 +1,5 @@
 using System.Collections;
+using Script.Enemy.new_Enemy_system;
 using UnityEngine;
 
 namespace Script.Player
@@ -31,13 +32,11 @@ namespace Script.Player
         [SerializeField] private CapsuleCollider crawlPlayer;
 
         [SerializeField] public bool isInKillZone = false;
-        
-        
+
+        private EnemyStatic enemyTarget;
 
         [Header("VALUE")][Tooltip("Original 9,81")] [SerializeField] private float gravityMultiplier;
         
-       
-    
         public static PlayerControl INSTANCE;
 
         public enum PlayerStateCollider
@@ -141,9 +140,15 @@ namespace Script.Player
                 moveSpeed = moveSpeedWalking;
             }
         
-
-            if (Input.GetKeyDown(KeyCode.Mouse0) && isInKillZone)
+            //TODO fucking raycast need to be done idiot please for the love of GOD
+            if (Input.GetKeyDown(KeyCode.Mouse0))  //isInKillZone
             {
+                Vector3 playerHead = gameObject.transform.position + new Vector3(0, playerHeight/2, 0);
+                Physics.Raycast(playerHead, transform.forward, out var firstHit, 1f, vaultLayer);
+                //if (firstHit.)
+                {
+                    
+                }
                 moveSpeed = moveSpeedAttacking;
                 animatorComponent.SetTrigger("IsStabbing");
                 StartCoroutine(FightStateChanger());
@@ -218,16 +223,16 @@ namespace Script.Player
             rbComponent.constraints = RigidbodyConstraints.FreezeRotationX |
                                       RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezeRotationY;
         }
-
+/*
         private void OnTriggerEnter(Collider other)
         {
-            if (other.CompareTag("killZone")) isInKillZone = true;
+            if (other.CompareTag("Enemy")) isInKillZone = true;
         }
 
         private void OnTriggerExit(Collider other)
         {
-            if (other.CompareTag("killZone")) isInKillZone = false;
-        }
+            if (other.CompareTag("Enemy")) isInKillZone = false;
+        }*/
 
         private void Vault()
         {

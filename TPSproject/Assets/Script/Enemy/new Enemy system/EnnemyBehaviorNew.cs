@@ -16,7 +16,7 @@ namespace Script.Enemy.new_Enemy_system
         private NavMeshAgent agent;
     
         [Header("Ia State")]
-        [SerializeField] private IaState currentIaState = IaState.Patrol;
+        public IaState currentIaState = IaState.Patrol;
         private bool searching = false;
     
         [Header("Range Float")]
@@ -37,7 +37,7 @@ namespace Script.Enemy.new_Enemy_system
         private bool isPlayerTouched = false;
     
         [Header("Animator Parameters")]
-        private Animator animator;
+        public Animator animator;
     
         [Header("Sight Vue")]
         private BoxCollider sightVue;
@@ -49,13 +49,14 @@ namespace Script.Enemy.new_Enemy_system
 
         [Header("Origin Position")] [SerializeField]
         private Vector3 originalPosition;
-    
-        enum IaState
+
+        public enum IaState
         {
             Patrol,
             ChasePlayer,
             Attack,
             Search,
+            Dead,
         }
 
         private void OnDrawGizmosSelected()
@@ -90,6 +91,10 @@ namespace Script.Enemy.new_Enemy_system
 
         private void IaBehaviour() // oublie pas quand le player est accroupi ou qu'il crawl
         {
+            if (currentIaState == IaState.Dead)
+            {
+                return;
+            }
             RayCheckObstacle();
             if (!CheckIfPlayerInSightEnemy() && !CheckIfPlayerInFightZone())
                 currentIaState = IaState.Patrol;
@@ -108,8 +113,13 @@ namespace Script.Enemy.new_Enemy_system
             {
                 currentIaState = IaState.Patrol;
             }
-        
-        
+
+            if (CheckIfPlayerInSightEnemy() && CheckIfPlayerInFightZone() && PlayerControl.INSTANCE.currentPLayerStateCollider == PlayerControl.PlayerStateCollider.Attack)
+            {
+                currentIaState = IaState.Dead;
+                animator.Play("Death animation");
+                return;
+            }
         
             if (currentIaState == IaState.ChasePlayer)
             {

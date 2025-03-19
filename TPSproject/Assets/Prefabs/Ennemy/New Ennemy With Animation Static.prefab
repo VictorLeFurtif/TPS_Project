@@ -1124,8 +1124,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1.9451258, z: 6.5023174}
-  m_Center: {x: -0.00000001209455, y: -0.47256643, z: 2.751158}
+  m_Size: {x: 1, y: 1.9451258, z: 6.0527325}
+  m_Center: {x: -0.000000012371453, y: -0.47256774, z: 2.9759505}
 --- !u!1 &3635499515951282659
 GameObject:
   m_ObjectHideFlags: 0
@@ -1422,6 +1422,7 @@ MonoBehaviour:
   rayColor: {r: 1, g: 0, b: 0, a: 1}
   rayColorNoObstacle: {r: 0, g: 1, b: 0, a: 1}
   moveSpeed: 5
+  originalPosition: {x: 0, y: 0, z: 0}
 --- !u!1 &4519000453197786188
 GameObject:
   m_ObjectHideFlags: 0
