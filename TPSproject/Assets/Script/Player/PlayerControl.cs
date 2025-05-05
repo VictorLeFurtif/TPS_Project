@@ -9,9 +9,9 @@ namespace Script.Player
         [SerializeField] private int vaultLayer;
         
         [Header("MOVE SPEED")] [SerializeField]
-        private float moveSpeed = 5;
+        public float moveSpeed = 5;
         [SerializeField] private float moveSpeedRunning = 7;
-        [SerializeField] private float moveSpeedWalking = 5;
+        public float moveSpeedWalking = 5;
         [SerializeField] private float moveSpeedCrawling = 2;
         [SerializeField] private float rotationSpeed = 1;
         [SerializeField] private float moveSpeedAttacking = 0;
@@ -36,6 +36,15 @@ namespace Script.Player
         private EnemyStatic enemyTarget;
 
         [Header("VALUE")][Tooltip("Original 9,81")] [SerializeField] private float gravityMultiplier;
+
+
+        [Header("Value to Kill")] [SerializeField]
+        private float distanceToKill;
+
+        [SerializeField] private LayerMask enemyLayerMask;
+
+        private bool isDead = false;
+        
         
         public static PlayerControl INSTANCE;
 
@@ -45,7 +54,8 @@ namespace Script.Player
             Crouching,
             Crawling,
             Attack,
-            Climbing
+            Climbing,
+            Dead
         }
 
         [Header("STATE PLAYER")] 
@@ -58,7 +68,6 @@ namespace Script.Player
             else
             {
                 INSTANCE = this;
-                DontDestroyOnLoad(gameObject);
             }
         }
 
@@ -91,18 +100,32 @@ namespace Script.Player
     
         private void Update()
         {
-        PlayerMovement();
-        Vault();
-        Vector3 playerHead = gameObject.transform.position + new Vector3(0, playerHeight, 0);
-        Debug.DrawRay(playerHead, transform.forward, Color.green, vaultLayer);
-        
+            if (currentPLayerStateCollider == PlayerStateCollider.Dead)
+            {
+                DeathBehavior();
+                return;
+            }
+            PlayerMovement();
+            Vault();
+            Vector3 playerHead = gameObject.transform.position + new Vector3(0, playerHeight, 0);
+            
         }
 
+        private void DeathBehavior()
+        {
+            if (isDead) return;
+            isDead = true;
+            animatorComponent.Play("Falling Forward Death");
+        }
+        
         private void PlayerMovement()
         {
+            if (isDead)
+            {
+                return;
+            }
             
-            
-            if (Input.GetKeyDown(KeyCode.LeftShift))
+            if (Input.GetKeyDown(KeyCode.LeftShift) && currentPLayerStateCollider == PlayerStateCollider.Normal)
             {
                 moveSpeed = moveSpeedRunning;
                 animatorComponent.SetBool("IsRunning", true);
@@ -140,24 +163,35 @@ namespace Script.Player
                 moveSpeed = moveSpeedWalking;
             }
         
-            //TODO fucking raycast need to be done idiot please for the love of GOD
+            
             if (Input.GetKeyDown(KeyCode.Mouse0))  //isInKillZone
             {
                 Vector3 playerHead = gameObject.transform.position + new Vector3(0, playerHeight/2, 0);
-                Physics.Raycast(playerHead, transform.forward, out var firstHit, 1f, vaultLayer);
-                //if (firstHit.)
+                Debug.DrawRay(playerHead, transform.forward * distanceToKill,Color.red,2f);
+                if (Physics.Raycast(playerHead, transform.forward, out var hit, distanceToKill,enemyLayerMask))
                 {
-                    
+                    Debug.Log("Detected");
+                    moveSpeed = moveSpeedAttacking;
+                    animatorComponent.SetTrigger("IsStabbing");
+                    StartCoroutine(FightStateChanger());
+                    EnemyStatic enemy = hit.collider.GetComponent<EnemyStatic>();
+                    if (enemy != null)
+                    {
+                        enemy.Kill();
+                    }
                 }
-                moveSpeed = moveSpeedAttacking;
-                animatorComponent.SetTrigger("IsStabbing");
-                StartCoroutine(FightStateChanger());
+
             }
             
         }
 
         private void PlayerMovementWithoutUpdate()
         {
+            if (isDead)
+            {
+                return;
+            }
+            
             float horizontalInput = Input.GetAxis("Horizontal");
             float verticallInput = Input.GetAxis("Vertical");
             Vector3 camForward = CameraReferenceTransform.forward;
@@ -238,14 +272,20 @@ namespace Script.Player
         {
             if (!Input.GetKeyDown(KeyCode.Space)) return;
             Vector3 playerHead = gameObject.transform.position + new Vector3(0, playerHeight, 0);
-            if (!Physics.Raycast(playerHead, transform.forward, out var firstHit, 1f, vaultLayer)) return;
-            Debug.Log("Here is a wall");
-            if (Physics.Raycast(firstHit.point + (transform.forward * playerRadius) +
-                                (Vector3.up * 0.6f * playerHeight), Vector3.down,
-                    out var secondHit,playerHeight))
+            if (Physics.Raycast(playerHead, transform.forward, out var firstHit, 1f))
             {
-                print("Found place to land");
-                StartCoroutine(VaultAnimation(secondHit.point, 2));
+                if (firstHit.transform.gameObject.layer != vaultLayer)
+                {
+                    return;
+                }
+                
+                if (Physics.Raycast(firstHit.point + (transform.forward * playerRadius) +
+                                    (Vector3.up * 0.6f * playerHeight), Vector3.down,
+                        out var secondHit,playerHeight))
+                {
+                    print("Found place to land");
+                    StartCoroutine(VaultAnimation(secondHit.point, 2));
+                } 
             }
         }
 
@@ -254,13 +294,6 @@ namespace Script.Player
             currentPLayerStateCollider = PlayerStateCollider.Climbing;
             animatorComponent.Play("Climbing");
             rbComponent.useGravity = false;
-
-           /* while (time < duration)
-            {
-                transform.position = Vector3.Lerp(startPosition, targetPosition, time / duration);
-                time += Time.deltaTime;
-                yield return null;
-            }*/
            yield return new WaitForSeconds(animationClimb.length);
            animatorComponent.Play("Standing");
             transform.position = targetPosition;

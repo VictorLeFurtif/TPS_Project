@@ -27,7 +27,7 @@ namespace Script
         {
             rotationY += Input.GetAxis("Mouse X") * vitesseRotation;
             rotationX -= Input.GetAxis("Mouse Y") * vitesseRotation;
-            rotationX = Mathf.Clamp(rotationX, -30, 30);
+            rotationX = Mathf.Clamp(rotationX, 5, 30);
         
             Quaternion rotation = Quaternion.Euler(rotationX, rotationY, 0);
             transform.rotation = rotation;
@@ -38,7 +38,7 @@ namespace Script
         
             isRunning = Input.GetKey(KeyCode.LeftShift); 
         
-            if (isRunning)
+            if (isRunning && PlayerControl.INSTANCE?.currentPLayerStateCollider == PlayerControl.PlayerStateCollider.Normal)
             {
      
                 float offsetX = Mathf.Sin(Time.time * shakeSpeed) * shakeIntensity;
@@ -46,9 +46,9 @@ namespace Script
                 position += new Vector3(offsetX, offsetY, 0);
             }
 
-            if (PlayerControl.INSTANCE.currentPLayerStateCollider == PlayerControl.PlayerStateCollider.Climbing)
+            if (PlayerControl.INSTANCE != null && PlayerControl.INSTANCE.currentPLayerStateCollider == PlayerControl.PlayerStateCollider.Climbing)
             {
-                transform.position = Vector3.Lerp(transform.position,cible.transform.position + new Vector3(-distance,4,0),Time.deltaTime * 4);
+                transform.position = Vector3.Lerp(transform.position,cible.transform.position + new Vector3(0,4,-1),Time.deltaTime * 4);
                 return;
             }
             

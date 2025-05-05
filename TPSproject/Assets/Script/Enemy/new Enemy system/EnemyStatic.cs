@@ -76,6 +76,7 @@ namespace Script.Enemy.new_Enemy_system
             sightVue = GetComponentInChildren<BoxCollider>();
             agent.speed = moveSpeed;
             originalPosition = transform.position;
+            
         }
 
         private bool CheckIfPlayerInSightEnemy()
@@ -101,7 +102,8 @@ namespace Script.Enemy.new_Enemy_system
             else if (CheckIfPlayerInSightEnemy() && !CheckIfPlayerInFightZone() && 
                      (PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crawling &&
                       PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crouching && 
-                      PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Attack))
+                      PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Attack
+                      && PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Climbing))
                 currentIaState = IaState.ChasePlayer;
         
             else if (CheckIfPlayerInSightEnemy() && CheckIfPlayerInFightZone() && 
@@ -124,24 +126,22 @@ namespace Script.Enemy.new_Enemy_system
         
             if (currentIaState == IaState.ChasePlayer)
             {
-                if (!isPlayerTouched && targetPosition==Vector3.zero)
+                switch (isPlayerTouched)
                 {
-                    currentIaState = IaState.Search;
-                    targetPosition = PlayerControl.INSTANCE.transform.position;
-                    agent.SetDestination(targetPosition);
-                }
-                else if (!isPlayerTouched)
-                {
-                    currentIaState = IaState.Search;
-                }
-                else
-                {
-                    targetPosition = Vector3.zero;
+                    case false when targetPosition==Vector3.zero:
+                        currentIaState = IaState.Search;
+                        targetPosition = PlayerControl.INSTANCE.transform.position;
+                        agent.SetDestination(targetPosition);
+                        break;
+                    case false:
+                        currentIaState = IaState.Search;
+                        break;
+                    default:
+                        targetPosition = Vector3.zero;
+                        break;
                 }
             }
-        
-        
-
+            
             switch (currentIaState)
             {
                 case IaState.Idle:
@@ -162,7 +162,7 @@ namespace Script.Enemy.new_Enemy_system
             }
         }
 
-        private void PatrolBehaviour()
+        protected virtual void PatrolBehaviour() // need to be override not the same chasing system
         {
             //TODO for the moment we dont care because we need him static so he wont move
             if (!Mathf.Approximately(transform.position.x,originalPosition.x))
@@ -193,7 +193,6 @@ namespace Script.Enemy.new_Enemy_system
         {
             agent.SetDestination(PlayerControl.INSTANCE.transform.position);
         }
-    
 
         private void AttackBehavior()
         {
@@ -201,7 +200,7 @@ namespace Script.Enemy.new_Enemy_system
             transform.LookAt(PlayerControl.INSTANCE.transform); // Le lookAt me permet quand y'aura les anims
 
             if (alreadyAttacked) return;
-            // futur code pour attack
+            PlayerControl.INSTANCE.currentPLayerStateCollider = PlayerControl.PlayerStateCollider.Dead;
             animator.Play("Zombie Punching");
             Invoke(nameof(ResetAttack), timeBetweenAttacks);
         }
@@ -214,28 +213,28 @@ namespace Script.Enemy.new_Enemy_system
         private void RayCheckObstacle()
         {
             Vector3 directionToPlayer = (PlayerControl.INSTANCE.transform.position - transform.position).normalized;
-            Ray ray = new Ray(transform.position, directionToPlayer);
+            Ray ray = new Ray(transform.position + new Vector3(0,1,0), directionToPlayer);
             RaycastHit hit;
         
             if (Physics.Raycast(ray, out hit, rayLength))
             {
                 if (hit.collider.CompareTag("Player"))
                 {
-                    Debug.DrawRay(transform.position, directionToPlayer * rayLength, rayColorNoObstacle);
+                    Debug.DrawRay(transform.position+ new Vector3(0,1,0), directionToPlayer * rayLength, rayColorNoObstacle);
                     isPlayerTouched = true;
                 }
                 else
                 {
-                    Debug.DrawRay(transform.position, directionToPlayer * hit.distance, rayColor);
+                    Debug.DrawRay(transform.position+ new Vector3(0,1,0), directionToPlayer * hit.distance, rayColor);
                     isPlayerTouched = false;
                 }
             }
-            else Debug.DrawRay(transform.position, directionToPlayer * rayLength, rayColorNoObstacle);
+            else Debug.DrawRay(transform.position+ new Vector3(0,1,0), directionToPlayer * rayLength, rayColorNoObstacle);
         }
 
         private void OnTriggerEnter(Collider other)
         {
-            if (other.CompareTag("Player") && CheckIfPlayerInSightEnemy())
+            if (other.CompareTag("Player") && CheckIfPlayerInSightEnemy() && currentIaState != IaState.Dead)
             {
                 currentIaState = IaState.ChasePlayer;
             }
@@ -243,10 +242,21 @@ namespace Script.Enemy.new_Enemy_system
 
         private void OnTriggerExit(Collider other)
         {
-            if (other.CompareTag("Player"))
+            if (other.CompareTag("Player") && currentIaState != IaState.Dead)
             {
                 currentIaState = IaState.Idle;
             }
         }
+        
+        public void Kill()
+        {
+            if (currentIaState == IaState.Dead) return;
+            currentIaState = IaState.Dead;
+            animator.Play("Death animation");
+            agent.enabled = false;
+            GetComponent<CapsuleCollider>().enabled = false;
+            PlayerControl.INSTANCE.moveSpeed = PlayerControl.INSTANCE.moveSpeedWalking;
+        }
+
     }
 }

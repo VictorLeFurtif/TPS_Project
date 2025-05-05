@@ -101,7 +101,9 @@ namespace Script.Enemy.new_Enemy_system
         
             else if (CheckIfPlayerInSightEnemy() && !CheckIfPlayerInFightZone() && 
                      (PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crawling &&
-                      PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crouching))
+                      PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crouching && 
+                      PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Attack
+                      && PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Climbing))
                 currentIaState = IaState.ChasePlayer;
         
             else if (CheckIfPlayerInSightEnemy() && CheckIfPlayerInFightZone() && 
@@ -123,19 +125,19 @@ namespace Script.Enemy.new_Enemy_system
         
             if (currentIaState == IaState.ChasePlayer)
             {
-                if (!isPlayerTouched && targetPosition==Vector3.zero)
+                switch (isPlayerTouched)
                 {
-                    currentIaState = IaState.Search;
-                    targetPosition = PlayerControl.INSTANCE.transform.position;
-                    agent.SetDestination(targetPosition);
-                }
-                else if (!isPlayerTouched)
-                {
-                    currentIaState = IaState.Search;
-                }
-                else
-                {
-                    targetPosition = Vector3.zero;
+                    case false when targetPosition==Vector3.zero:
+                        currentIaState = IaState.Search;
+                        targetPosition = PlayerControl.INSTANCE.transform.position;
+                        agent.SetDestination(targetPosition);
+                        break;
+                    case false:
+                        currentIaState = IaState.Search;
+                        break;
+                    default:
+                        targetPosition = Vector3.zero;
+                        break;
                 }
             }
         
@@ -161,7 +163,7 @@ namespace Script.Enemy.new_Enemy_system
             }
         }
 
-        private void PatrolBehaviour()
+        protected virtual void PatrolBehaviour()
         {
             if (!walkPointSet) SearchWalkPoint();
             if (walkPointSet) agent.SetDestination(walkPoint);
@@ -191,8 +193,7 @@ namespace Script.Enemy.new_Enemy_system
         {
             agent.SetDestination(PlayerControl.INSTANCE.transform.position);
         }
-    
-
+        
         private void AttackBehavior()
         {
             agent.SetDestination(transform.position); //faut lock l'ennemi

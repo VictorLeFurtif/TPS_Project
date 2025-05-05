@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class DoorButton : MonoBehaviour
@@ -8,7 +9,10 @@ public class DoorButton : MonoBehaviour
     private Vector3 openPosition;
     private readonly float animationSpeed = 2f;  
     private float lerpTime = 0f;        
-    private bool isAnimating = false;   
+    private bool isAnimating = false;
+    
+
+    private bool inZone;
 
     private void Start()
     {
@@ -18,6 +22,7 @@ public class DoorButton : MonoBehaviour
 
     private void Update()
     {
+        ToggleF();
         ToggleDoor();
     }
 
@@ -38,11 +43,24 @@ public class DoorButton : MonoBehaviour
         );
     }
 
-    private void OnTriggerStay(Collider other)
+    private void ToggleF()
     {
-        if (!Input.GetKeyDown(KeyCode.F) || !other.CompareTag("Player")) return;
-        doorIsOpen = !doorIsOpen;
-        lerpTime = 0f;     
-        isAnimating = true;
+        if (inZone && Input.GetKeyDown(KeyCode.F) && !doorIsOpen)
+        {
+            doorIsOpen = !doorIsOpen;
+            lerpTime = 0f;     
+            isAnimating = true;
+        }
+    }
+    
+
+    private void OnTriggerEnter(Collider other)
+    {
+        inZone = true;
+    }
+    
+    private void OnTriggerExit(Collider other)
+    {
+        inZone = false;
     }
 }

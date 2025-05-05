@@ -1466,6 +1466,10 @@ MonoBehaviour:
   crawlPlayer: {fileID: 736752034493325378}
   isInKillZone: 0
   gravityMultiplier: 15
+  distanceToKill: 3
+  enemyLayerMask:
+    serializedVersion: 2
+    m_Bits: 256
   currentPLayerStateCollider: 0
 --- !u!54 &2009988607839230157
 Rigidbody:
@@ -1503,7 +1507,7 @@ Animator:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4628963634800241846}
   m_Enabled: 1
-  m_Avatar: {fileID: 9000000, guid: 81bb9eea30387e442899949a80011e55, type: 3}
+  m_Avatar: {fileID: 0}
   m_Controller: {fileID: 9100000, guid: 88d98cdb701af6442842089abd41663f, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
@@ -1535,9 +1539,9 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.36311686
-  m_Height: 1.8229656
+  m_Height: 1.7382494
   m_Direction: 1
-  m_Center: {x: 0.007974982, y: 0.83091426, z: 0}
+  m_Center: {x: 0.007974982, y: 0.87327236, z: 0}
 --- !u!136 &3034785440249477218
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1558,9 +1562,9 @@ CapsuleCollider:
   m_Enabled: 0
   serializedVersion: 2
   m_Radius: 0.35446823
-  m_Height: 1.0877836
+  m_Height: 1.1912748
   m_Direction: 1
-  m_Center: {x: 0, y: 0.47756636, z: 0}
+  m_Center: {x: 0, y: 0.59369534, z: 0}
 --- !u!136 &736752034493325378
 CapsuleCollider:
   m_ObjectHideFlags: 0
