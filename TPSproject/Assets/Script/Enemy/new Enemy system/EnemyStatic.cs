@@ -49,6 +49,9 @@ namespace Script.Enemy.new_Enemy_system
         [Header("Origin Position")] [SerializeField]
         private Vector3 originalPosition;
 
+        [Header("Layer Mask")] [SerializeField]
+        private LayerMask layerEnemy;
+
         public enum IaState
         {
             Idle,
@@ -89,7 +92,7 @@ namespace Script.Enemy.new_Enemy_system
             return Physics.CheckSphere(transform.position, fightRange, whatIsPlayer);
         }
 
-        private void IaBehaviour() // oublie pas quand le player est accroupi ou qu'il crawl
+        private void IaBehaviour() 
         {
             if (currentIaState == IaState.Dead)
             {
@@ -100,16 +103,16 @@ namespace Script.Enemy.new_Enemy_system
                 currentIaState = IaState.Idle;
         
             else if (CheckIfPlayerInSightEnemy() && !CheckIfPlayerInFightZone() && 
-                     (PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crawling &&
-                      PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crouching && 
-                      PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Attack
-                      && PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Climbing))
+                     (PlayerControl.Instance.currentState != PlayerControl.PlayerStateCollider.Crawling &&
+                      PlayerControl.Instance.currentState != PlayerControl.PlayerStateCollider.Crouching && 
+                      PlayerControl.Instance.currentState != PlayerControl.PlayerStateCollider.Attack
+                      && PlayerControl.Instance.currentState != PlayerControl.PlayerStateCollider.Climbing))
                 currentIaState = IaState.ChasePlayer;
         
             else if (CheckIfPlayerInSightEnemy() && CheckIfPlayerInFightZone() && 
-                     (PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crawling &&
-                      PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crouching && 
-                      PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Attack))
+                     (PlayerControl.Instance.currentState != PlayerControl.PlayerStateCollider.Crawling &&
+                      PlayerControl.Instance.currentState != PlayerControl.PlayerStateCollider.Crouching && 
+                      PlayerControl.Instance.currentState != PlayerControl.PlayerStateCollider.Attack))
                 currentIaState = IaState.Attack;
         
             else if (currentIaState == IaState.Search)
@@ -117,7 +120,7 @@ namespace Script.Enemy.new_Enemy_system
                 currentIaState = IaState.Idle;
             }
         
-            if (CheckIfPlayerInSightEnemy() && CheckIfPlayerInFightZone() && PlayerControl.INSTANCE.currentPLayerStateCollider == PlayerControl.PlayerStateCollider.Attack)
+            if (CheckIfPlayerInSightEnemy() && CheckIfPlayerInFightZone() && PlayerControl.Instance.currentState == PlayerControl.PlayerStateCollider.Attack)
             {
                 currentIaState = IaState.Dead;
                 animator.Play("Death animation");
@@ -130,7 +133,7 @@ namespace Script.Enemy.new_Enemy_system
                 {
                     case false when targetPosition==Vector3.zero:
                         currentIaState = IaState.Search;
-                        targetPosition = PlayerControl.INSTANCE.transform.position;
+                        targetPosition = PlayerControl.Instance.transform.position;
                         agent.SetDestination(targetPosition);
                         break;
                     case false:
@@ -175,32 +178,20 @@ namespace Script.Enemy.new_Enemy_system
                 animator.SetBool("Run",false);
             }
         }
-
-        private void SearchWalkPoint()
-        {
-            float zRandom = Random.Range(-walkPointRange, walkPointRange);
-            float xRandom = Random.Range(-walkPointRange, walkPointRange);
         
-            Vector3 newWalkPoint = new Vector3(transform.position.x + xRandom, transform.position.y, transform.position.z + zRandom);
-
-            NavMeshHit hit;
-            if (!NavMesh.SamplePosition(newWalkPoint, out hit, 2f, NavMesh.AllAreas)) return;
-            walkPoint = hit.position;
-            walkPointSet = true;
-        }
 
         private void ChasePlayerBehaviour()
         {
-            agent.SetDestination(PlayerControl.INSTANCE.transform.position);
+            agent.SetDestination(PlayerControl.Instance.transform.position);
         }
 
         private void AttackBehavior()
         {
             agent.SetDestination(transform.position); //faut lock l'ennemi
-            transform.LookAt(PlayerControl.INSTANCE.transform); // Le lookAt me permet quand y'aura les anims
+            transform.LookAt(PlayerControl.Instance.transform); // Le lookAt me permet quand y'aura les anims
 
             if (alreadyAttacked) return;
-            PlayerControl.INSTANCE.currentPLayerStateCollider = PlayerControl.PlayerStateCollider.Dead;
+            PlayerControl.Instance.currentState = PlayerControl.PlayerStateCollider.Dead;
             animator.Play("Zombie Punching");
             Invoke(nameof(ResetAttack), timeBetweenAttacks);
         }
@@ -212,11 +203,11 @@ namespace Script.Enemy.new_Enemy_system
     
         private void RayCheckObstacle()
         {
-            Vector3 directionToPlayer = (PlayerControl.INSTANCE.transform.position - transform.position).normalized;
+            Vector3 directionToPlayer = (PlayerControl.Instance.transform.position - transform.position).normalized;
             Ray ray = new Ray(transform.position + new Vector3(0,1,0), directionToPlayer);
             RaycastHit hit;
         
-            if (Physics.Raycast(ray, out hit, rayLength))
+            if (Physics.Raycast(ray, out hit, rayLength,~layerEnemy))
             {
                 if (hit.collider.CompareTag("Player"))
                 {
@@ -255,7 +246,7 @@ namespace Script.Enemy.new_Enemy_system
             animator.Play("Death animation");
             agent.enabled = false;
             GetComponent<CapsuleCollider>().enabled = false;
-            PlayerControl.INSTANCE.moveSpeed = PlayerControl.INSTANCE.moveSpeedWalking;
+            PlayerControl.Instance.movementSettings.currentSpeed = PlayerControl.Instance.movementSettings.walkingSpeed;
         }
 
     }

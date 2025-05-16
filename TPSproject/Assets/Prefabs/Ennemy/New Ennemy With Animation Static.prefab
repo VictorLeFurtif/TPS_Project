@@ -1425,6 +1425,9 @@ MonoBehaviour:
   animator: {fileID: 0}
   moveSpeed: 5
   originalPosition: {x: 0, y: 0, z: 0}
+  layerEnemy:
+    serializedVersion: 2
+    m_Bits: 256
 --- !u!136 &6365520759581041156
 CapsuleCollider:
   m_ObjectHideFlags: 0

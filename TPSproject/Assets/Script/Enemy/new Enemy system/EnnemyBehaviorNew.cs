@@ -49,6 +49,9 @@ namespace Script.Enemy.new_Enemy_system
 
         [Header("Origin Position")] [SerializeField]
         private Vector3 originalPosition;
+        
+        [Header("Layer Mask")] [SerializeField]
+        private LayerMask layerEnemy;
 
         public enum IaState
         {
@@ -89,65 +92,45 @@ namespace Script.Enemy.new_Enemy_system
             return Physics.CheckSphere(transform.position, fightRange, whatIsPlayer);
         }
 
-        private void IaBehaviour() // oublie pas quand le player est accroupi ou qu'il crawl
+        private void IaBehaviour()
         {
-            if (currentIaState == IaState.Dead)
-            {
-                return;
-            }
+            if (currentIaState == IaState.Dead) return;
+
             RayCheckObstacle();
+            
             if (!CheckIfPlayerInSightEnemy() && !CheckIfPlayerInFightZone())
                 currentIaState = IaState.Patrol;
-        
             else if (CheckIfPlayerInSightEnemy() && !CheckIfPlayerInFightZone() && 
-                     (PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crawling &&
-                      PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crouching && 
-                      PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Attack
-                      && PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Climbing))
+                     (PlayerControl.Instance.currentState != PlayerControl.PlayerStateCollider.Crawling &&
+                      PlayerControl.Instance.currentState != PlayerControl.PlayerStateCollider.Crouching && 
+                      PlayerControl.Instance.currentState != PlayerControl.PlayerStateCollider.Attack
+                      && PlayerControl.Instance.currentState != PlayerControl.PlayerStateCollider.Climbing))
                 currentIaState = IaState.ChasePlayer;
-        
             else if (CheckIfPlayerInSightEnemy() && CheckIfPlayerInFightZone() && 
-                     (PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crawling &&
-                      PlayerControl.INSTANCE.currentPLayerStateCollider != PlayerControl.PlayerStateCollider.Crouching))
+                     (PlayerControl.Instance.currentState != PlayerControl.PlayerStateCollider.Crawling &&
+                      PlayerControl.Instance.currentState != PlayerControl.PlayerStateCollider.Crouching))
                 currentIaState = IaState.Attack;
-        
-            else if (currentIaState == IaState.Search)
+            
+            if (currentIaState == IaState.ChasePlayer && !isPlayerTouched)
             {
-                currentIaState = IaState.Patrol;
-            }
-
-            if (CheckIfPlayerInSightEnemy() && CheckIfPlayerInFightZone() && PlayerControl.INSTANCE.currentPLayerStateCollider == PlayerControl.PlayerStateCollider.Attack)
-            {
-                currentIaState = IaState.Dead;
-                animator.Play("Death animation");
-                return;
-            }
-        
-            if (currentIaState == IaState.ChasePlayer)
-            {
-                switch (isPlayerTouched)
+                if (targetPosition == Vector3.zero)
                 {
-                    case false when targetPosition==Vector3.zero:
-                        currentIaState = IaState.Search;
-                        targetPosition = PlayerControl.INSTANCE.transform.position;
-                        agent.SetDestination(targetPosition);
-                        break;
-                    case false:
-                        currentIaState = IaState.Search;
-                        break;
-                    default:
-                        targetPosition = Vector3.zero;
-                        break;
+                    targetPosition = PlayerControl.Instance.transform.position;
+                    agent.SetDestination(targetPosition);
+                }
+                
+                if (agent.remainingDistance < 1f)
+                {
+                    currentIaState = IaState.Patrol;
+                    targetPosition = Vector3.zero;
                 }
             }
-        
-        
-
+           
             switch (currentIaState)
             {
                 case IaState.Patrol:
                     PatrolBehaviour();
-                    animator.SetBool("Run",false);
+                    animator.SetBool("Run", false);
                     break;
                 case IaState.ChasePlayer:
                     ChasePlayerBehaviour();
@@ -156,10 +139,27 @@ namespace Script.Enemy.new_Enemy_system
                 case IaState.Attack:
                     AttackBehavior();
                     break;
-                case IaState.Search: 
+                case IaState.Search:
+                    SearchBehaviour();
                     break;
-                default:
-                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        private void SearchBehaviour()
+        {
+            if (agent.remainingDistance < 1f)
+            {
+                Vector3 randomPoint = targetPosition + Random.insideUnitSphere * 5f;
+                NavMeshHit hit;
+                if (NavMesh.SamplePosition(randomPoint, out hit, 2f, NavMesh.AllAreas))
+                {
+                    agent.SetDestination(hit.position);
+                }
+                else
+                {
+                    currentIaState = IaState.Patrol;
+                    targetPosition = Vector3.zero;
+                }
             }
         }
 
@@ -191,16 +191,16 @@ namespace Script.Enemy.new_Enemy_system
 
         private void ChasePlayerBehaviour()
         {
-            agent.SetDestination(PlayerControl.INSTANCE.transform.position);
+            agent.SetDestination(PlayerControl.Instance.transform.position);
         }
         
         private void AttackBehavior()
         {
             agent.SetDestination(transform.position); //faut lock l'ennemi
-            transform.LookAt(PlayerControl.INSTANCE.transform); // Le lookAt me permet quand y'aura les anims
+            transform.LookAt(PlayerControl.Instance.transform); // Le lookAt me permet quand y'aura les anims
 
             if (alreadyAttacked) return;
-            // futur code pour attack
+            PlayerControl.Instance.currentState = PlayerControl.PlayerStateCollider.Dead;
             animator.Play("Zombie Punching");
             Invoke(nameof(ResetAttack), timeBetweenAttacks);
         }
@@ -212,11 +212,11 @@ namespace Script.Enemy.new_Enemy_system
     
         private void RayCheckObstacle()
         {
-            Vector3 directionToPlayer = (PlayerControl.INSTANCE.transform.position - transform.position).normalized;
-            Ray ray = new Ray(transform.position, directionToPlayer);
+            Vector3 directionToPlayer = (PlayerControl.Instance.transform.position - transform.position).normalized;
+            Ray ray = new Ray(transform.position+ new Vector3(0,1,0), directionToPlayer);
             RaycastHit hit;
         
-            if (Physics.Raycast(ray, out hit, rayLength))
+            if (Physics.Raycast(ray, out hit, rayLength,~layerEnemy))
             {
                 if (hit.collider.CompareTag("Player"))
                 {
@@ -229,7 +229,7 @@ namespace Script.Enemy.new_Enemy_system
                     isPlayerTouched = false;
                 }
             }
-            else Debug.DrawRay(transform.position, directionToPlayer * rayLength, rayColorNoObstacle);
+            else Debug.DrawRay(transform.position, directionToPlayer * rayLength, Color.magenta);
         }
 
         private void OnTriggerEnter(Collider other)

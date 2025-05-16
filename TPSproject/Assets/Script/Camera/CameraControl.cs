@@ -1,3 +1,4 @@
+using System;
 using Script.Player;
 using UnityEngine;
 
@@ -10,13 +11,22 @@ namespace Script
         [SerializeField] private float hauteur;
         [SerializeField] private float distance = 5;
         [SerializeField] private float shakeIntensity = 0.1f;  
-        [SerializeField] private float shakeSpeed = 10f;      
+        [SerializeField] private float shakeSpeed = 10f;
+
+        [SerializeField] private Vector3 camDirection;
+
+        [SerializeField] private Vector2 cameraDistanceMinMax = new Vector2(0.5f, 5f);
 
         private float rotationX = 0;
         private float rotationY = 0;
 
         private Vector3 initialPosition;
         private bool isRunning = false;
+
+        private void Start()
+        {
+            camDirection = transform.localPosition.normalized;
+        }
 
         void Update()
         {
@@ -38,7 +48,7 @@ namespace Script
         
             isRunning = Input.GetKey(KeyCode.LeftShift); 
         
-            if (isRunning && PlayerControl.INSTANCE?.currentPLayerStateCollider == PlayerControl.PlayerStateCollider.Normal)
+            if (isRunning && PlayerControl.Instance?.currentState == PlayerControl.PlayerStateCollider.Normal)
             {
      
                 float offsetX = Mathf.Sin(Time.time * shakeSpeed) * shakeIntensity;
@@ -46,7 +56,7 @@ namespace Script
                 position += new Vector3(offsetX, offsetY, 0);
             }
 
-            if (PlayerControl.INSTANCE != null && PlayerControl.INSTANCE.currentPLayerStateCollider == PlayerControl.PlayerStateCollider.Climbing)
+            if (PlayerControl.Instance != null && PlayerControl.Instance.currentState == PlayerControl.PlayerStateCollider.Climbing)
             {
                 transform.position = Vector3.Lerp(transform.position,cible.transform.position + new Vector3(0,4,-1),Time.deltaTime * 4);
                 return;
@@ -54,5 +64,7 @@ namespace Script
             
             transform.position = position; 
         }
+
+        
     }
 }

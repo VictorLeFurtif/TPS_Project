@@ -1452,25 +1452,28 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   vaultLayer: 7
-  moveSpeed: 20
-  moveSpeedRunning: 7
-  moveSpeedWalking: 5
-  moveSpeedCrawling: 2
-  rotationSpeed: 9
-  moveSpeedAttacking: 0
-  CameraReferenceTransform: {fileID: 0}
-  animatorComponent: {fileID: 0}
+  movementSettings:
+    walkingSpeed: 5
+    runningSpeed: 7
+    crawlingSpeed: 2
+    attackingSpeed: 0
+    rotationSpeed: 14.75
+    gravityMultiplier: 9.81
+    currentSpeed: 0
+  combatSettings:
+    killDistance: 1.58
+    enemyLayerMask:
+      serializedVersion: 2
+      m_Bits: 256
+  colliderSettings:
+    standCollider: {fileID: 4542540772260917471}
+    crouchCollider: {fileID: 3034785440249477218}
+    crawlCollider: {fileID: 736752034493325378}
+  cameraReferenceTransform: {fileID: 0}
   animationClimb: {fileID: 7400000, guid: 4a3756728e0433445ae520a68ca308c8, type: 2}
-  standPlayer: {fileID: 4542540772260917471}
-  crouchPlayer: {fileID: 3034785440249477218}
-  crawlPlayer: {fileID: 736752034493325378}
+  currentState: 0
   isInKillZone: 0
-  gravityMultiplier: 15
-  distanceToKill: 3
-  enemyLayerMask:
-    serializedVersion: 2
-    m_Bits: 256
-  currentPLayerStateCollider: 0
+  animatorComponent: {fileID: 0}
 --- !u!54 &2009988607839230157
 Rigidbody:
   m_ObjectHideFlags: 0
